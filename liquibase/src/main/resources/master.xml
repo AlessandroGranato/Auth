@@ -1,0 +1,36 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+										http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
+
+    <!--<property file="liquibase.properties" context="jenkins" />
+    <property file="src/main/resources/liquibase-local.properties" context="local"/>-->
+
+    <changeSet author="PyroSandro" id="AUTH_SQL_001_schema" logicalFilePath="AUTH" labels="1.0.0">
+        <sqlFile encoding="utf8"
+                 path="sql/AUTH_SQL_001/AUTH_SQL_001_schema.sql"
+                 relativeToChangelogFile="true" splitStatements="true"
+                 stripComments="true" />
+        <rollback>
+            <sqlFile encoding="utf8"
+                     path="sql/AUTH_SQL_001/rollback/RB_AUTH_SQL_001_schema.sql"
+                     relativeToChangelogFile="true" splitStatements="true"
+                     stripComments="true" />
+        </rollback>
+    </changeSet>
+
+    <changeSet author="PyroSandro" id="AUTH_SQL_001_tables" logicalFilePath="AUTH" labels="1.0.0">
+        <sqlFile encoding="utf8"
+                 path="sql/AUTH_SQL_001/AUTH_SQL_001_tables.sql"
+                 relativeToChangelogFile="true" splitStatements="true"
+                 stripComments="true" />
+        <rollback>
+            <sqlFile encoding="utf8"
+                     path="sql/AUTH_SQL_001/rollback/RB_AUTH_SQL_001_tables.sql"
+                     relativeToChangelogFile="true" splitStatements="true"
+                     stripComments="true" />
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

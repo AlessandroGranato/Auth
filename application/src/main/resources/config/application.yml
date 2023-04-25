@@ -1,0 +1,63 @@
+## PROPS ## TODO - REMOVE THEM FROM application.yml
+SERVER_PORT: 8081
+LOGGING_LEVEL: DEBUG
+DATABASE_IP: localhost
+DATABASE_PORT: 5432
+DATABASE_USERNAME: dbAuth
+DATABASE_PASSWORD: dbAuth
+
+clientApp:
+  name: 'auth'
+
+## APP ##
+server:
+  port : ${SERVER_PORT}
+
+
+spring:
+  ## DB ##
+  datasource:
+    url: jdbc:postgresql://${DATABASE_IP}:${DATABASE_PORT}/dbAuth
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+  ## HIBERNATE ##
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: auth
+    hibernate:
+      ddl-auto: none
+      show-sql: true
+  ## ASYNC MESSAGE BROKERS ##
+#  kafka:
+#    bootstrap-servers: ${KAFKA_BOOSTRAP_SERVERS}
+#    consumer:
+#      group-id: ${KAFKA_CONSUMER_GROUP_ID}
+
+# App Properties
+auth:
+  jwt-secret: ${JWT_SECRET}
+  jwt-expiration-ms: ${JWT_EXPIRATION_MS}
+bezkoder.app.jwtSecret= bezKoderSecretKey
+ bezkoder.app.jwtExpirationMs= 86400000
+
+## Automatic hibernate/sql logs
+## Test it with a register post and see if it logs more, when properties are set
+#logging:
+#  level:
+#    org:
+#      hibernate:
+#        SQL: DEBUG
+#        type:
+#          descriptor:
+#            sql:
+#              BasicBinder: TRACE
+
+## LOG ##
+logging:
+  level:
+    com.pyrosandro.auth: ${LOGGING_LEVEL}
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}
+"

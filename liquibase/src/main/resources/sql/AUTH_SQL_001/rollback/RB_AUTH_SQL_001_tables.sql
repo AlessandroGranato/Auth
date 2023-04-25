@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS auth.AUTH_USER;
+DROP SEQUENCE IF EXISTS auth.auth_user_seq;
