@@ -1,0 +1,4 @@
+Refactor app introducing service
+Refactor errors introducing error constants
+Refactor errors introducing error handler
+Refactor classes introducing lombok annotations (for example remove constructors and replace them with RequiredArgsConstructor)

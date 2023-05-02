@@ -1,2 +1,6 @@
-DROP TABLE IF EXISTS auth.AUTH_USER;
-DROP SEQUENCE IF EXISTS auth.auth_user_seq;
+drop table if exists auth.auth_users_roles;
+drop table if exists auth.auth_roles;
+drop table if exists auth.auth_users;
+
+drop sequence if exists auth.auth_roles_seq;
+drop sequence if exists auth.auth_users_seq;

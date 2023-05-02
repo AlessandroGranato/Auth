@@ -1,1 +1,1 @@
-DROP SCHEMA IF EXISTS auth;
+drop schema if exists auth;

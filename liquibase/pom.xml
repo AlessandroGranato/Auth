@@ -80,6 +80,38 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>liquibase-prod</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.liquibase</groupId>
+                        <artifactId>liquibase-maven-plugin</artifactId>
+                        <configuration>
+                            <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
+                            <propertyFileWillOverride>true</propertyFileWillOverride>
+                            <propertyFile>${resources.path}/liquibase-prod.properties</propertyFile>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>update</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>update</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>rollback</id>
+                                <phase>clean</phase>
+                                <goals>
+                                    <goal>rollback</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
 </project>
