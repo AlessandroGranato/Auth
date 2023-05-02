@@ -4,12 +4,15 @@ services:
   auth-postgresql:
     image: postgres:13.5
     # volumes:
-    #   - ~/volumes/jhipster/comeAndGetItLogin/postgresql/:/var/lib/postgresql/data/
+    #   - ~/volumes/auth/postgresql/:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_USER=dbAuth
-      - POSTGRES_PASSWORD=dbAuth
+      - POSTGRES_DB=${DATABASE_NAME}
+      - POSTGRES_USER=${DATABASE_USERNAME}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
       - POSTGRES_HOST_AUTH_METHOD=trust
     # If you want to expose these ports outside your dev PC,
     # remove the "127.0.0.1:" prefix
     ports:
-      - 127.0.0.1:5432:5432
+      - ${DATABASE_IP}:${DATABASE_HOST_PORT}:${DATABASE_CONTAINER_PORT}
+
+

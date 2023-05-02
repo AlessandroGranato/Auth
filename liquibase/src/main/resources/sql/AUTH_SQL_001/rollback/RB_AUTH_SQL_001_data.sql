@@ -1,0 +1,1 @@
+delete from auth.auth_roles;

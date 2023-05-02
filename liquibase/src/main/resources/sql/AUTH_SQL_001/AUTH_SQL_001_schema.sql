@@ -1,1 +1,1 @@
-CREATE SCHEMA auth;
+create schema auth;

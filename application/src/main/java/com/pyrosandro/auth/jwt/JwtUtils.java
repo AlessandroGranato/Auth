@@ -5,9 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
-
-import java.text.DateFormat;
-import java.text.ParseException;
 import java.util.Date;
 
 @Component
@@ -18,7 +15,7 @@ public class JwtUtils {
     private String jwtSecret;
 
     @Value("${auth.jwt-expiration-ms}")
-    private String jwtExpirationMs;
+    private Long jwtExpirationMs;
 
     public String generateJwtToken(Authentication authentication) {
         AuthUserDetails authUserPrincipal = (AuthUserDetails) authentication.getPrincipal();
@@ -27,11 +24,11 @@ public class JwtUtils {
             jwtToken = Jwts.builder()
                     .setSubject(authUserPrincipal.getUsername())
                     .setIssuedAt(new Date())
-                    .setExpiration(DateFormat.getDateInstance().parse((new Date()).getTime() + jwtExpirationMs))
+                    .setExpiration(new Date((new Date().getTime() + jwtExpirationMs)))
                     .signWith(SignatureAlgorithm.HS512, jwtSecret)
                     .compact();
-        } catch (ParseException e) {
-            log.error("Error while generating the token: {}", e.getMessage());
+        } catch (Exception e) {
+            log.error("Error while generating the token: {}", e);
         }
         return jwtToken;
     }

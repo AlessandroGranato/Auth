@@ -19,12 +19,14 @@ import java.util.Set;
 })
 @Getter
 @Setter
-@ToString
+@NoArgsConstructor
 @RequiredArgsConstructor
+@ToString
 public class AuthUser {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @NonNull
     private Long id;
 
     @NotBlank
@@ -40,12 +42,10 @@ public class AuthUser {
     @Size(max = 120)
     private String password;
 
-
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "user_roles",
+    @JoinTable(name = "auth_users_roles",
             joinColumns = @JoinColumn(name = "auth_user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id"))
-    @ToString.Exclude
+            inverseJoinColumns = @JoinColumn(name = "auth_role_id"))
     private Set<Role> roles = new HashSet<>();
 
     @Override
