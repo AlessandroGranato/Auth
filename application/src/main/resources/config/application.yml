@@ -22,16 +22,25 @@ spring:
     hibernate:
       ddl-auto: none
       show-sql: true
-  ## ASYNC MESSAGE BROKERS ##
-#  kafka:
-#    bootstrap-servers: ${KAFKA_BOOSTRAP_SERVERS}
-#    consumer:
-#      group-id: ${KAFKA_CONSUMER_GROUP_ID}
+  application:
+    name: auth-service
 
 # App Properties
 auth:
   jwt-secret: ${JWT_SECRET}
   jwt-expiration-ms: ${JWT_EXPIRATION_MS}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${SERVICE_REGISTRY_USERNAME}:${SERVICE_REGISTRY_PASSWORD}@${SERVICE_REGISTRY_URL}:${SERVICE_REGISTRY_PORT}/eureka
+
+## LOG ##
+logging:
+  level:
+    com.pyrosandro.auth: ${LOGGING_LEVEL}
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
 
 ## Automatic hibernate/sql logs
 ## Test it with a register post and see if it logs more, when properties are set
@@ -44,11 +53,3 @@ auth:
 #          descriptor:
 #            sql:
 #              BasicBinder: TRACE
-
-## LOG ##
-logging:
-  level:
-    com.pyrosandro.auth: ${LOGGING_LEVEL}
-  pattern:
-    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}
-"
