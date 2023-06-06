@@ -3,7 +3,7 @@ package com.pyrosandro.auth.config;
 import com.pyrosandro.auth.jwt.AuthEntryPointJwt;
 import com.pyrosandro.auth.jwt.AuthTokenFilter;
 import com.pyrosandro.auth.jwt.JwtUtils;
-import com.pyrosandro.auth.service.AuthUserDetailsServiceImpl;
+import com.pyrosandro.auth.service.impl.AuthUserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
