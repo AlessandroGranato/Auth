@@ -1,4 +1,4 @@
-package com.pyrosandro.auth.service;
+package com.pyrosandro.auth.service.impl;
 
 import com.pyrosandro.auth.jwt.AuthUserDetails;
 import com.pyrosandro.auth.model.AuthUser;

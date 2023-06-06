@@ -2,15 +2,21 @@ package com.pyrosandro.auth.resource;
 
 import com.pyrosandro.auth.dto.request.SignInRequestDTO;
 import com.pyrosandro.auth.dto.request.SignUpRequestDTO;
+import com.pyrosandro.auth.dto.response.AuthorizeResourceResponseDTO;
 import com.pyrosandro.auth.dto.response.JwtResponse;
 import com.pyrosandro.auth.dto.response.MessageResponse;
+import com.pyrosandro.auth.exception.ResourceNotFoundException;
 import com.pyrosandro.auth.jwt.AuthUserDetails;
 import com.pyrosandro.auth.jwt.JwtUtils;
 import com.pyrosandro.auth.model.AuthUser;
 import com.pyrosandro.auth.model.ERole;
+import com.pyrosandro.auth.model.Resource;
 import com.pyrosandro.auth.model.Role;
 import com.pyrosandro.auth.repository.AuthUserRepository;
+import com.pyrosandro.auth.repository.ResourceRepository;
 import com.pyrosandro.auth.repository.RoleRepository;
+import com.pyrosandro.auth.service.impl.AuthUserDetailsServiceImpl;
+import com.pyrosandro.auth.utils.AuthConstants;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,10 +26,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -36,13 +46,24 @@ public class AuthController {
     RoleRepository roleRepository;
     PasswordEncoder encoder;
     JwtUtils jwtUtils;
+    AuthUserDetailsServiceImpl authUserDetailsService;
+    ResourceRepository resourceRepository;
 
-    public AuthController(AuthenticationManager authenticationManager, AuthUserRepository authUserRepository, RoleRepository roleRepository, PasswordEncoder encoder, JwtUtils jwtUtils) {
+    public AuthController(
+            AuthenticationManager authenticationManager,
+            AuthUserRepository authUserRepository,
+            RoleRepository roleRepository,
+            PasswordEncoder encoder,
+            JwtUtils jwtUtils,
+            AuthUserDetailsServiceImpl authUserDetailsService,
+            ResourceRepository resourceRepository) {
         this.authenticationManager = authenticationManager;
         this.authUserRepository = authUserRepository;
         this.roleRepository = roleRepository;
         this.encoder = encoder;
         this.jwtUtils = jwtUtils;
+        this.authUserDetailsService = authUserDetailsService;
+        this.resourceRepository = resourceRepository;
     }
 
     @PostMapping("/signup")
@@ -112,4 +133,55 @@ public class AuthController {
 
     }
 
+    @GetMapping("/authorize-resource")
+    public ResponseEntity<?> authorizeResource(HttpServletRequest request) {
+        try {
+            String jwt = jwtUtils.parseJwt(request);
+            if(jwt == null || !jwtUtils.validateJwtToken(jwt)) {
+                return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED).body("Error: Unauthorized");
+            }
+            String username = jwtUtils.getUsernameFromJwtToken(jwt);
+            AuthUserDetails authUserDetails = (AuthUserDetails) authUserDetailsService.loadUserByUsername(username);
+            List<String> roles = authUserDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
+
+            String generalizedResourcePath = generalizeResourcePath(request.getHeader(AuthConstants.RESOURCE_PATH_HEADER));
+            Resource resource = resourceRepository.findByResourcePath(generalizedResourcePath).orElseThrow(() -> new ResourceNotFoundException("Resource not found with path: " + generalizedResourcePath));
+
+            boolean isAuthorized = isResourceAuthorized(roles, resource.getRoles().stream().map(r -> r.getName().name()).collect(Collectors.toList()));
+
+            if(isAuthorized) {
+                AuthorizeResourceResponseDTO authorizeResourceResponseDTO = AuthorizeResourceResponseDTO.builder()
+                        .userId(authUserDetails.getId())
+                        .roles(roles)
+                        .build();
+                return ResponseEntity.ok(authorizeResourceResponseDTO);
+            } else {
+                return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED).body("Error: Unauthorized");
+            }
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Resource not found!"));
+        }
+
+
+    }
+
+    private String generalizeResourcePath(String resourcePath) {
+        Pattern pattern = Pattern.compile("\\{[^}]+\\}");
+        Matcher matcher = pattern.matcher(resourcePath);
+        String resolvedPath = matcher.replaceAll("*");
+
+        return resolvedPath;
+    }
+
+    //TODO - change double for in stream
+    private boolean isResourceAuthorized(List<String> userRoles, List<String> resourceRoles) {
+        for(String userRole : userRoles) {
+            for(String resourceRole : resourceRoles) {
+                if(userRole.equals(resourceRole)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }

@@ -43,4 +43,31 @@
                      stripComments="true" />
         </rollback>
     </changeSet>
+
+    <changeSet author="PyroSandro" id="AUTH_SQL_002_tables" logicalFilePath="AUTH" labels="1.0.0">
+        <sqlFile encoding="utf8"
+                 path="sql/AUTH_SQL_002/AUTH_SQL_002_tables.sql"
+                 relativeToChangelogFile="true" splitStatements="true"
+                 stripComments="true" />
+        <rollback>
+            <sqlFile encoding="utf8"
+                     path="sql/AUTH_SQL_002/rollback/RB_AUTH_SQL_002_tables.sql"
+                     relativeToChangelogFile="true" splitStatements="true"
+                     stripComments="true" />
+        </rollback>
+    </changeSet>
+
+    <changeSet author="PyroSandro" id="AUTH_SQL_002_data" logicalFilePath="AUTH" labels="1.0.0">
+        <sqlFile encoding="utf8"
+                 path="sql/AUTH_SQL_002/AUTH_SQL_002_data.sql"
+                 relativeToChangelogFile="true" splitStatements="true"
+                 stripComments="true" />
+        <rollback>
+            <sqlFile encoding="utf8"
+                     path="sql/AUTH_SQL_002/rollback/RB_AUTH_SQL_002_data.sql"
+                     relativeToChangelogFile="true" splitStatements="true"
+                     stripComments="true" />
+        </rollback>
+    </changeSet>
+
 </databaseChangeLog>
