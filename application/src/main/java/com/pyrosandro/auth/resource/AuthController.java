@@ -5,7 +5,7 @@ import com.pyrosandro.auth.dto.request.SignUpRequestDTO;
 import com.pyrosandro.auth.dto.response.AuthorizeResourceResponseDTO;
 import com.pyrosandro.auth.dto.response.JwtResponse;
 import com.pyrosandro.auth.dto.response.MessageResponse;
-import com.pyrosandro.auth.exception.ResourceNotFoundException;
+import com.pyrosandro.auth.exception.AuthException;
 import com.pyrosandro.auth.jwt.AuthUserDetails;
 import com.pyrosandro.auth.jwt.JwtUtils;
 import com.pyrosandro.auth.model.AuthUser;
@@ -17,6 +17,7 @@ import com.pyrosandro.auth.repository.ResourceRepository;
 import com.pyrosandro.auth.repository.RoleRepository;
 import com.pyrosandro.auth.service.impl.AuthUserDetailsServiceImpl;
 import com.pyrosandro.auth.utils.AuthConstants;
+import com.pyrosandro.auth.utils.ErrorConstants;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,7 +28,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.util.HashSet;
 import java.util.List;
@@ -67,16 +67,12 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpRequestDTO signUpRequestDTO) {
+    public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpRequestDTO signUpRequestDTO) throws AuthException {
         if (authUserRepository.existsByUsername(signUpRequestDTO.getUsername())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Error: Username is already taken!"));
+            throw new AuthException(ErrorConstants.USERNAME_ALREADY_USED, null);
         }
-        if(authUserRepository.existsByEmail(signUpRequestDTO.getEmail())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Error: Email is already in use!"));
+        if (authUserRepository.existsByEmail(signUpRequestDTO.getEmail())) {
+            throw new AuthException(ErrorConstants.EMAIL_ALREADY_USED, null);
         }
 
         Set<String> strRoles = signUpRequestDTO.getRoles();
@@ -113,7 +109,7 @@ public class AuthController {
     }
 
     @PostMapping("/signin")
-    public ResponseEntity<?> authenticateUser (@Valid @RequestBody SignInRequestDTO signInRequestDTO) {
+    public ResponseEntity<?> authenticateUser(@Valid @RequestBody SignInRequestDTO signInRequestDTO) {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(signInRequestDTO.getUsername(), signInRequestDTO.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtils.generateJwtToken(authentication);
@@ -134,54 +130,53 @@ public class AuthController {
     }
 
     @GetMapping("/authorize-resource")
-    public ResponseEntity<?> authorizeResource(HttpServletRequest request) {
-        try {
-            String jwt = jwtUtils.parseJwt(request);
-            if(jwt == null || !jwtUtils.validateJwtToken(jwt)) {
-                return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED).body("Error: Unauthorized");
-            }
-            String username = jwtUtils.getUsernameFromJwtToken(jwt);
-            AuthUserDetails authUserDetails = (AuthUserDetails) authUserDetailsService.loadUserByUsername(username);
-            List<String> roles = authUserDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
+    public ResponseEntity<?> authorizeResource(HttpServletRequest request) throws AuthException {
 
-            String generalizedResourcePath = generalizeResourcePath(request.getHeader(AuthConstants.RESOURCE_PATH_HEADER));
-            Resource resource = resourceRepository.findByResourcePath(generalizedResourcePath).orElseThrow(() -> new ResourceNotFoundException("Resource not found with path: " + generalizedResourcePath));
-
-            boolean isAuthorized = isResourceAuthorized(roles, resource.getRoles().stream().map(r -> r.getName().name()).collect(Collectors.toList()));
-
-            if(isAuthorized) {
-                AuthorizeResourceResponseDTO authorizeResourceResponseDTO = AuthorizeResourceResponseDTO.builder()
-                        .userId(authUserDetails.getId())
-                        .roles(roles)
-                        .build();
-                return ResponseEntity.ok(authorizeResourceResponseDTO);
-            } else {
-                return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED).body("Error: Unauthorized");
-            }
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: Resource not found!"));
+        String jwt = jwtUtils.parseJwt(request);
+        if (jwt == null) {
+            throw new AuthException(ErrorConstants.MISSING_AUTHORIZATION_HEADER, null);
         }
+        jwtUtils.validateJwtToken(jwt);
+        String username = jwtUtils.getUsernameFromJwtToken(jwt);
+        AuthUserDetails authUserDetails = (AuthUserDetails) authUserDetailsService.loadUserByUsername(username);
+        List<String> roles = authUserDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
 
+        String generalizedResourcePath = generalizeResourcePath(request.getHeader(AuthConstants.RESOURCE_PATH_HEADER));
+        Resource resource = resourceRepository.findByResourcePath(generalizedResourcePath).orElseThrow(() -> new AuthException(ErrorConstants.RESOURCE_NOT_FOUND, new Object[]{generalizedResourcePath}));
 
+        boolean isAuthorized = isResourceAuthorized(roles, resource.getRoles().stream().map(r -> r.getName().name()).collect(Collectors.toList()));
+
+        if (!isAuthorized) {
+            throw new AuthException(ErrorConstants.RESOURCE_NOT_AUTHORIZED, new Object[]{username, generalizedResourcePath});
+        }
+        AuthorizeResourceResponseDTO authorizeResourceResponseDTO = AuthorizeResourceResponseDTO.builder()
+                .userId(authUserDetails.getId())
+                .roles(roles)
+                .build();
+        return ResponseEntity.ok(authorizeResourceResponseDTO);
     }
 
     private String generalizeResourcePath(String resourcePath) {
         Pattern pattern = Pattern.compile("\\{[^}]+\\}");
         Matcher matcher = pattern.matcher(resourcePath);
-        String resolvedPath = matcher.replaceAll("*");
-
-        return resolvedPath;
+        return matcher.replaceAll("*");
     }
 
-    //TODO - change double for in stream
+
     private boolean isResourceAuthorized(List<String> userRoles, List<String> resourceRoles) {
-        for(String userRole : userRoles) {
-            for(String resourceRole : resourceRoles) {
-                if(userRole.equals(resourceRole)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return userRoles.stream()
+                .anyMatch(userRole -> resourceRoles.stream()
+                        .anyMatch(userRole::equals));
     }
+
+//    private boolean isResourceAuthorized(List<String> userRoles, List<String> resourceRoles) {
+//        for (String userRole : userRoles) {
+//            for (String resourceRole : resourceRoles) {
+//                if (userRole.equals(resourceRole)) {
+//                    return true;
+//                }
+//            }
+//        }
+//        return false;
+//    }
 }

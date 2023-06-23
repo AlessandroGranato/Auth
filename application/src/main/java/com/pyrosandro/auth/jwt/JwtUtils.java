@@ -1,5 +1,8 @@
 package com.pyrosandro.auth.jwt;
 
+import com.pyrosandro.auth.exception.AuthException;
+import com.pyrosandro.auth.utils.AuthConstants;
+import com.pyrosandro.auth.utils.ErrorConstants;
 import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,7 +34,7 @@ public class JwtUtils {
                     .signWith(SignatureAlgorithm.HS512, jwtSecret)
                     .compact();
         } catch (Exception e) {
-            log.error("Error while generating the token: {}", e);
+            log.error("Error while generating the token: {}", e.getMessage());
         }
         return jwtToken;
     }
@@ -40,30 +43,31 @@ public class JwtUtils {
         return Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token).getBody().getSubject();
     }
 
-    public boolean validateJwtToken(String authToken) {
+
+    public boolean validateJwtToken(String authToken) throws AuthException {
         try {
             Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(authToken);
             return true;
         } catch (SignatureException e) {
-            log.error("Invalid JWT signature: {}", e.getMessage());
+            throw new AuthException(ErrorConstants.INVALID_JWT_SIGNATURE, null);
         } catch (MalformedJwtException e) {
-            log.error("Invalid JWT token: {}", e.getMessage());
+            throw new AuthException(ErrorConstants.MALFORMED_JWT, null);
         } catch (ExpiredJwtException e) {
-            log.error("JWT token is expired: {}", e.getMessage());
+            throw new AuthException(ErrorConstants.EXIPERD_JWT, null);
         } catch (UnsupportedJwtException e) {
-            log.error("JWT token is unsupported: {}", e.getMessage());
+            throw new AuthException(ErrorConstants.UNSUPPORTED_JWT, null);
         } catch (IllegalArgumentException e) {
-            log.error("JWT claims string is empty: {}", e.getMessage());
+            throw new AuthException(ErrorConstants.ILLEGAL_ARGUMENT, null);
+        } catch (Exception e) {
+            throw new AuthException(ErrorConstants.GENERIC_ERROR, null, e.getMessage(), e);
         }
-        return false;
     }
 
-    //TODO - Change "Authorization" and "Bearer " with constants
     public String parseJwt(HttpServletRequest request) {
-        String headerAuth = request.getHeader("Authorization");
-        if(StringUtils.hasText(headerAuth) && headerAuth.startsWith("Bearer ")) {
-            return headerAuth.substring(7, headerAuth.length());
+        String headerAuth = request.getHeader(AuthConstants.AUTHORIZATION_HEADER);
+        if(!StringUtils.hasText(headerAuth) || !headerAuth.startsWith(AuthConstants.BEARER)) {
+            return null;
         }
-        return null;
+        return headerAuth.substring(7);
     }
 }

@@ -1,3 +1,4 @@
+Add validation error handler
 Refactor app introducing service
 Refactor classes introducing lombok annotations (for example remove constructors and replace them with RequiredArgsConstructor)
 Refactor errors introducing error constants
