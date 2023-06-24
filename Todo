@@ -1,5 +1,14 @@
-Add validation error handler
-Refactor app introducing service
+High priority:
+
+Medium priority:
+
+Low priority:
 Refactor classes introducing lombok annotations (for example remove constructors and replace them with RequiredArgsConstructor)
-Refactor errors introducing error constants
-Refactor errors introducing error handler like DOM or comeAndGetItUserManagement
+
+No priority:
+Refactor app introducing service.
+    I decided that (for now), Auth module won't receive refactoring with the scope to serve the classic architecture (resource - service - repository) for the following reasons:
+        - Auth is pretty entangled with Spring security configuration, so we can leave it as it is for the moment, since we have higher priorities for other modules
+        - It would change a lot of things and introduce complexity between layers (mappers, objects, and so on) that are not required in a microservice that (hopefully) will remain kind the same
+
+

@@ -1,6 +1,5 @@
 package com.pyrosandro.auth.exception;
 
-import com.pyrosandro.auth.utils.ErrorConstants;
 import lombok.Data;
 
 @Data
