@@ -19,6 +19,9 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         default_schema: auth
+#        # If you want to save/retrieve datetime to/from db in utc
+#        jdbc:
+#          time_zone:UTC
     hibernate:
       ddl-auto: none
       show-sql: true

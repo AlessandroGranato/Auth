@@ -17,13 +17,14 @@ import com.pyrosandro.auth.repository.ResourceRepository;
 import com.pyrosandro.auth.repository.RoleRepository;
 import com.pyrosandro.auth.service.impl.AuthUserDetailsServiceImpl;
 import com.pyrosandro.auth.utils.AuthConstants;
-import com.pyrosandro.auth.utils.ErrorConstants;
+import com.pyrosandro.auth.exception.ErrorConstants;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -77,26 +78,30 @@ public class AuthController {
 
         Set<String> strRoles = signUpRequestDTO.getRoles();
         Set<Role> roles = new HashSet<>();
+        try {
+            if (strRoles == null) {
+                Role userRole = roleRepository.findByName(ERole.ROLE_USER).orElseThrow(() -> new RuntimeException("Error: role not found"));
+                roles.add(userRole);
+            } else {
 
-        if (strRoles == null) {
-            Role userRole = roleRepository.findByName(ERole.ROLE_USER).orElseThrow(() -> new RuntimeException("Error: Role is not found"));
-            roles.add(userRole);
-        } else {
-            strRoles.forEach(strRole -> {
-                switch (strRole) {
-                    case "admin":
-                        Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN).orElseThrow(() -> new RuntimeException("Error: Role is not found"));
-                        roles.add(adminRole);
-                        break;
-                    case "mod":
-                        Role modRole = roleRepository.findByName(ERole.ROLE_MODERATOR).orElseThrow(() -> new RuntimeException("Error: Role is not found"));
-                        roles.add(modRole);
-                        break;
-                    default:
-                        Role userRole = roleRepository.findByName(ERole.ROLE_USER).orElseThrow(() -> new RuntimeException("Error: Role is not found"));
-                        roles.add(userRole);
-                }
-            });
+                strRoles.forEach(strRole -> {
+                    switch (strRole) {
+                        case "admin":
+                            Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN).orElseThrow(() -> new RuntimeException("Error: role not found"));
+                            roles.add(adminRole);
+                            break;
+                        case "mod":
+                            Role modRole = roleRepository.findByName(ERole.ROLE_MODERATOR).orElseThrow(() -> new RuntimeException("Error: role not found"));
+                            roles.add(modRole);
+                            break;
+                        default:
+                            Role userRole = roleRepository.findByName(ERole.ROLE_USER).orElseThrow(() -> new RuntimeException("Error: role not found"));
+                            roles.add(userRole);
+                    }
+                });
+            }
+        } catch (RuntimeException e) {
+            throw new AuthException(ErrorConstants.ROLE_NOT_FOUND, null);
         }
         AuthUser authUser = new AuthUser();
         authUser.setUsername(signUpRequestDTO.getUsername());
@@ -138,7 +143,13 @@ public class AuthController {
         }
         jwtUtils.validateJwtToken(jwt);
         String username = jwtUtils.getUsernameFromJwtToken(jwt);
-        AuthUserDetails authUserDetails = (AuthUserDetails) authUserDetailsService.loadUserByUsername(username);
+        AuthUserDetails authUserDetails;
+        try {
+            authUserDetails = (AuthUserDetails) authUserDetailsService.loadUserByUsername(username);
+        } catch (UsernameNotFoundException ex) {
+            throw new AuthException(ErrorConstants.USERNAME_NOT_FOUND, new Object[]{username});
+        }
+
         List<String> roles = authUserDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
 
         String generalizedResourcePath = generalizeResourcePath(request.getHeader(AuthConstants.RESOURCE_PATH_HEADER));

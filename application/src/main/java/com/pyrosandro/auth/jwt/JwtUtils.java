@@ -2,7 +2,7 @@ package com.pyrosandro.auth.jwt;
 
 import com.pyrosandro.auth.exception.AuthException;
 import com.pyrosandro.auth.utils.AuthConstants;
-import com.pyrosandro.auth.utils.ErrorConstants;
+import com.pyrosandro.auth.exception.ErrorConstants;
 import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
