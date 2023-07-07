@@ -15,11 +15,14 @@
 	</parent>
 	<groupId>com.pyrosandro</groupId>
 	<artifactId>auth</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>${revision}</version>
 	<name>auth</name>
 	<description>authentication microservice</description>
 	<properties>
+		<revision>0.0.1-SNAPSHOT</revision>
 		<java.version>11</java.version>
+		<common-bom-version>0.1.0-SNAPSHOT</common-bom-version>
+		<flatten.maven.plugin.version>1.1.0</flatten.maven.plugin.version>
 		<mapstruct.version>1.4.2.Final</mapstruct.version>
 		<spring-cloud.version>2021.0.7</spring-cloud.version>
 	</properties>
@@ -75,6 +78,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
+
 	</dependencies>
 
 	<dependencyManagement>
@@ -86,11 +90,44 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
+			<dependency>
+				<groupId>com.pyrosandro</groupId>
+				<artifactId>common-bom</artifactId>
+				<version>${common-bom-version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>flatten-maven-plugin</artifactId>
+				<version>${flatten.maven.plugin.version}</version>
+				<configuration>
+					<updatePomFile>true</updatePomFile>
+					<flattenMode>resolveCiFriendliesOnly</flattenMode>
+				</configuration>
+				<executions>
+					<execution>
+						<id>flatten</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>flatten</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>flatten.clean</id>
+						<phase>clean</phase>
+						<goals>
+							<goal>clean</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -137,5 +174,13 @@
 			<id>prod</id>
 		</profile>
 	</profiles>
+
+	<distributionManagement>
+		<repository>
+			<id>my-github-common</id>
+			<name>GitHub alessandrogranato common repo</name>
+			<url>https://maven.pkg.github.com/alessandrogranato/common</url>
+		</repository>
+	</distributionManagement>
 
 </project>

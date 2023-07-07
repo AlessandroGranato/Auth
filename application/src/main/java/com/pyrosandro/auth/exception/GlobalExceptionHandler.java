@@ -1,6 +1,7 @@
 package com.pyrosandro.auth.exception;
 
-import com.pyrosandro.auth.dto.response.ErrorDTO;
+
+import com.pyrosandro.common.dto.ErrorDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Value;
