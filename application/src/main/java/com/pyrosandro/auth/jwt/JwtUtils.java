@@ -2,9 +2,7 @@ package com.pyrosandro.auth.jwt;
 
 import com.pyrosandro.auth.exception.AuthException;
 import com.pyrosandro.auth.utils.AuthConstants;
-import com.pyrosandro.auth.exception.AuthErrorConstants;
-import com.pyrosandro.common.error.CommonException;
-import com.pyrosandro.common.error.ErrorConstants;
+import com.pyrosandro.auth.exception.ErrorConstants;
 import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,17 +49,17 @@ public class JwtUtils {
             Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(authToken);
             return true;
         } catch (SignatureException e) {
-            throw new AuthException(AuthErrorConstants.INVALID_JWT_SIGNATURE, null);
+            throw new AuthException(ErrorConstants.INVALID_JWT_SIGNATURE, null);
         } catch (MalformedJwtException e) {
-            throw new AuthException(AuthErrorConstants.MALFORMED_JWT, null);
+            throw new AuthException(ErrorConstants.MALFORMED_JWT, null);
         } catch (ExpiredJwtException e) {
-            throw new AuthException(AuthErrorConstants.EXIPERD_JWT, null);
+            throw new AuthException(ErrorConstants.EXIPERD_JWT, null);
         } catch (UnsupportedJwtException e) {
-            throw new AuthException(AuthErrorConstants.UNSUPPORTED_JWT, null);
+            throw new AuthException(ErrorConstants.UNSUPPORTED_JWT, null);
         } catch (IllegalArgumentException e) {
-            throw new AuthException(AuthErrorConstants.ILLEGAL_JWT_ARGUMENT, null);
+            throw new AuthException(ErrorConstants.ILLEGAL_ARGUMENT, null);
         } catch (Exception e) {
-            throw new CommonException(ErrorConstants.GENERIC_ERROR, null, e.getMessage(), e);
+            throw new AuthException(ErrorConstants.GENERIC_ERROR, null, e.getMessage(), e);
         }
     }
 
