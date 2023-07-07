@@ -1,6 +1,7 @@
 package com.pyrosandro.auth.dto.response;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
 import java.util.List;
 
