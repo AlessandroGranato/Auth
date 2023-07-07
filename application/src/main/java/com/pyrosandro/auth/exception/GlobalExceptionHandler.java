@@ -1,146 +1,69 @@
-package com.pyrosandro.auth.exception;
-
-
-import com.pyrosandro.common.dto.ErrorDTO;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.exception.ExceptionUtils;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.MessageSource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.lang.Nullable;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-
-import javax.validation.ConstraintViolation;
-import javax.validation.ConstraintViolationException;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-
-@Slf4j
-@ControllerAdvice
-public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-
-    private final boolean printStackTrace;
-
-    private final MessageSource messageSource;
-
-    public GlobalExceptionHandler(@Value("${common.printstacktrace:false}") boolean printStackTrace, MessageSource messageSource) {
-        this.printStackTrace = printStackTrace;
-        this.messageSource = messageSource;
-    }
-
-    @ExceptionHandler({AuthException.class})
-    public ResponseEntity<Object> handleAuthException(AuthException ex, WebRequest request) {
-
-        switch (ex.getErrorCode()) {
-            case RESOURCE_NOT_FOUND:
-                log.error("Resource not found", ex);
-                return buildErrorDTO(ex, messageSource.getMessage(String.valueOf(ex.getErrorCode().getCode()), ex.getErrorArgs(), Locale.getDefault()), HttpStatus.NOT_FOUND, request);
-            case INVALID_JWT_SIGNATURE:
-            case MALFORMED_JWT:
-            case EXIPERD_JWT:
-            case UNSUPPORTED_JWT:
-            case ILLEGAL_ARGUMENT:
-            case MISSING_AUTHORIZATION_HEADER:
-            case RESOURCE_NOT_AUTHORIZED:
-                log.error("unauthorized access", ex);
-                return buildErrorDTO(ex, messageSource.getMessage(String.valueOf(ex.getErrorCode().getCode()), ex.getErrorArgs(), Locale.getDefault()), HttpStatus.UNAUTHORIZED, request);
-            case USERNAME_ALREADY_USED:
-            case EMAIL_ALREADY_USED:
-                log.error("bad request", ex);
-                return buildErrorDTO(ex, messageSource.getMessage(String.valueOf(ex.getErrorCode().getCode()), ex.getErrorArgs(), Locale.getDefault()), HttpStatus.BAD_REQUEST, request);
-            default:
-                log.error("generic error", ex);
-                return buildErrorDTO(ex, HttpStatus.INTERNAL_SERVER_ERROR, request);
-        }
-    }
-
-    @ExceptionHandler(ConstraintViolationException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<Object> handleConstraintViolationException(ConstraintViolationException ex, WebRequest request) {
-        log.error("ConstraintViolation Validation error occurred", ex);
-
-        ErrorDTO errorDTO = new ErrorDTO(HttpStatus.BAD_REQUEST, messageSource.getMessage(String.valueOf(ErrorConstants.CONSTRAINT_VALIDATION_ERROR.getCode()), null, Locale.getDefault()));
-        for (ConstraintViolation constraintViolation : ex.getConstraintViolations()) {
-            errorDTO.addValidationError(constraintViolation.getPropertyPath().toString(), constraintViolation.getMessage());
-        }
-        if (printStackTrace) {
-            errorDTO.setStackTrace(ExceptionUtils.getStackTrace(ex));
-        }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorDTO);
-    }
-
-    @Override
-    public ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
-        log.error("MethodArgumentNotValid Validation error occurred", ex);
-
-        ErrorDTO errorDTO = new ErrorDTO(HttpStatus.BAD_REQUEST, messageSource.getMessage(String.valueOf(ErrorConstants.CONSTRAINT_VALIDATION_ERROR.getCode()), null, Locale.getDefault()));
-        for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
-            errorDTO.addValidationError(fieldError.getField(), fieldError.getDefaultMessage());
-        }
-        if (printStackTrace) {
-            errorDTO.setStackTrace(ExceptionUtils.getStackTrace(ex));
-        }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorDTO);
-    }
-
-    @ExceptionHandler(RuntimeException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ResponseEntity<Object> handleAllUncaughtRuntimeExceptions(RuntimeException ex, WebRequest request) {
-        log.error("Unknown error occurred", ex);
-        return buildErrorDTO(ex, HttpStatus.INTERNAL_SERVER_ERROR, request);
-    }
-
-    @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ResponseEntity<Object> handleAllUncaughtExceptions(Exception ex, WebRequest request) {
-        log.error("Unknown error occurred", ex);
-        return buildErrorDTO(ex, HttpStatus.INTERNAL_SERVER_ERROR, request);
-    }
-
-    @Override
-    public ResponseEntity<Object> handleExceptionInternal(Exception ex, @Nullable Object body, HttpHeaders headers, HttpStatus status, WebRequest request) {
-        return buildErrorDTO(ex, status, request);
-    }
-
-    private ResponseEntity<Object> buildErrorDTO(Exception ex, String message, HttpStatus status, WebRequest request) {
-        ErrorDTO errorDTO = new ErrorDTO(status, message);
-        if (printStackTrace) {
-            errorDTO.setStackTrace(ExceptionUtils.getStackTrace(ex));
-        }
-        return ResponseEntity.status(status).body(errorDTO);
-    }
-
-    private ResponseEntity<Object> buildErrorDTO(Exception ex, HttpStatus status, WebRequest request) {
-        ErrorDTO errorDTO = new ErrorDTO(status, ex.getMessage());
-        if (printStackTrace) {
-            errorDTO.setStackTrace(ExceptionUtils.getStackTrace(ex));
-        }
-        return ResponseEntity.status(status).body(errorDTO);
-    }
-
-}
-
+//package com.pyrosandro.auth.exception;
+//
+//
+//import com.pyrosandro.common.dto.ErrorDTO;
+//import lombok.extern.slf4j.Slf4j;
+//import org.apache.commons.lang.exception.ExceptionUtils;
+//import org.springframework.beans.factory.annotation.Value;
+//import org.springframework.context.MessageSource;
+//import org.springframework.http.HttpHeaders;
+//import org.springframework.http.HttpStatus;
+//import org.springframework.http.ResponseEntity;
+//import org.springframework.lang.Nullable;
+//import org.springframework.validation.FieldError;
+//import org.springframework.web.bind.MethodArgumentNotValidException;
+//import org.springframework.web.bind.annotation.ControllerAdvice;
+//import org.springframework.web.bind.annotation.ExceptionHandler;
+//import org.springframework.web.bind.annotation.ResponseStatus;
+//import org.springframework.web.context.request.WebRequest;
+//import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+//
+//import javax.validation.ConstraintViolation;
+//import javax.validation.ConstraintViolationException;
+//import java.util.List;
+//import java.util.Locale;
+//import java.util.Set;
+//
 //@Slf4j
 //@ControllerAdvice
 //public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 //
-//    @Value("${common.printstacktrace:false}")
-//    private boolean printStackTrace;
+//    protected final boolean printStackTrace;
 //
-//    @ExceptionHandler(ResourceNotFoundException.class)
-//    @ResponseStatus(HttpStatus.NOT_FOUND)
-//    public ResponseEntity<Object> handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
-//        log.error("Resource not found", ex);
-//        return buildErrorDTO(ex, HttpStatus.NOT_FOUND, request);
+//    protected final MessageSource messageSource;
+//
+//    public GlobalExceptionHandler(@Value("${common.printstacktrace:false}") boolean printStackTrace, MessageSource messageSource) {
+//        this.printStackTrace = printStackTrace;
+//        this.messageSource = messageSource;
+//    }
+//
+//    @ExceptionHandler(ConstraintViolationException.class)
+//    @ResponseStatus(HttpStatus.BAD_REQUEST)
+//    public ResponseEntity<Object> handleConstraintViolationException(ConstraintViolationException ex, WebRequest request) {
+//        log.error("ConstraintViolation Validation error occurred", ex);
+//
+//        ErrorDTO errorDTO = new ErrorDTO(HttpStatus.BAD_REQUEST, messageSource.getMessage(String.valueOf(ErrorConstants.CONSTRAINT_VALIDATION_ERROR.getCode()), null, Locale.getDefault()));
+//        for (ConstraintViolation constraintViolation : ex.getConstraintViolations()) {
+//            errorDTO.addValidationError(constraintViolation.getPropertyPath().toString(), constraintViolation.getMessage());
+//        }
+//        if (printStackTrace) {
+//            errorDTO.setStackTrace(ExceptionUtils.getStackTrace(ex));
+//        }
+//        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorDTO);
+//    }
+//
+//    @Override
+//    public ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+//        log.error("MethodArgumentNotValid Validation error occurred", ex);
+//
+//        ErrorDTO errorDTO = new ErrorDTO(HttpStatus.BAD_REQUEST, messageSource.getMessage(String.valueOf(ErrorConstants.CONSTRAINT_VALIDATION_ERROR.getCode()), null, Locale.getDefault()));
+//        for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
+//            errorDTO.addValidationError(fieldError.getField(), fieldError.getDefaultMessage());
+//        }
+//        if (printStackTrace) {
+//            errorDTO.setStackTrace(ExceptionUtils.getStackTrace(ex));
+//        }
+//        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorDTO);
 //    }
 //
 //    @ExceptionHandler(RuntimeException.class)
@@ -158,11 +81,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 //    }
 //
 //    @Override
-//    public ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers, HttpStatus status, WebRequest request) {
-//        return buildErrorDTO(ex,status,request);
+//    public ResponseEntity<Object> handleExceptionInternal(Exception ex, @Nullable Object body, HttpHeaders headers, HttpStatus status, WebRequest request) {
+//        return buildErrorDTO(ex, status, request);
 //    }
 //
-//    private ResponseEntity<Object> buildErrorDTO(Exception ex, HttpStatus status, WebRequest request) {
+//    protected ResponseEntity<Object> buildErrorDTO(Exception ex, String message, HttpStatus status, WebRequest request) {
+//        ErrorDTO errorDTO = new ErrorDTO(status, message);
+//        if (printStackTrace) {
+//            errorDTO.setStackTrace(ExceptionUtils.getStackTrace(ex));
+//        }
+//        return ResponseEntity.status(status).body(errorDTO);
+//    }
+//
+//    protected ResponseEntity<Object> buildErrorDTO(Exception ex, HttpStatus status, WebRequest request) {
 //        ErrorDTO errorDTO = new ErrorDTO(status, ex.getMessage());
 //        if (printStackTrace) {
 //            errorDTO.setStackTrace(ExceptionUtils.getStackTrace(ex));

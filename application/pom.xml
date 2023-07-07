@@ -21,6 +21,10 @@
             <groupId>com.pyrosandro</groupId>
             <artifactId>common-dto</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.pyrosandro</groupId>
+            <artifactId>common-error</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
