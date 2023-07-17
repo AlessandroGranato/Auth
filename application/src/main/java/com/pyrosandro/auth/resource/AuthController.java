@@ -5,6 +5,7 @@ import com.pyrosandro.auth.dto.request.SignUpRequestDTO;
 import com.pyrosandro.auth.dto.response.AuthorizeResourceResponseDTO;
 import com.pyrosandro.auth.dto.response.JwtResponse;
 import com.pyrosandro.auth.dto.response.MessageResponse;
+import com.pyrosandro.auth.exception.AuthErrorConstants;
 import com.pyrosandro.auth.exception.AuthException;
 import com.pyrosandro.auth.jwt.AuthUserDetails;
 import com.pyrosandro.auth.jwt.JwtUtils;
@@ -17,7 +18,6 @@ import com.pyrosandro.auth.repository.ResourceRepository;
 import com.pyrosandro.auth.repository.RoleRepository;
 import com.pyrosandro.auth.service.impl.AuthUserDetailsServiceImpl;
 import com.pyrosandro.auth.utils.AuthConstants;
-import com.pyrosandro.auth.exception.ErrorConstants;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -70,10 +70,10 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpRequestDTO signUpRequestDTO) throws AuthException {
         if (authUserRepository.existsByUsername(signUpRequestDTO.getUsername())) {
-            throw new AuthException(ErrorConstants.USERNAME_ALREADY_USED, null);
+            throw new AuthException(AuthErrorConstants.USERNAME_ALREADY_USED, null);
         }
         if (authUserRepository.existsByEmail(signUpRequestDTO.getEmail())) {
-            throw new AuthException(ErrorConstants.EMAIL_ALREADY_USED, null);
+            throw new AuthException(AuthErrorConstants.EMAIL_ALREADY_USED, null);
         }
 
         Set<String> strRoles = signUpRequestDTO.getRoles();
@@ -101,7 +101,7 @@ public class AuthController {
                 });
             }
         } catch (RuntimeException e) {
-            throw new AuthException(ErrorConstants.ROLE_NOT_FOUND, null);
+            throw new AuthException(AuthErrorConstants.ROLE_NOT_FOUND, null);
         }
         AuthUser authUser = new AuthUser();
         authUser.setUsername(signUpRequestDTO.getUsername());
@@ -139,7 +139,7 @@ public class AuthController {
 
         String jwt = jwtUtils.parseJwt(request);
         if (jwt == null) {
-            throw new AuthException(ErrorConstants.MISSING_AUTHORIZATION_HEADER, null);
+            throw new AuthException(AuthErrorConstants.MISSING_AUTHORIZATION_HEADER, null);
         }
         jwtUtils.validateJwtToken(jwt);
         String username = jwtUtils.getUsernameFromJwtToken(jwt);
@@ -147,18 +147,18 @@ public class AuthController {
         try {
             authUserDetails = (AuthUserDetails) authUserDetailsService.loadUserByUsername(username);
         } catch (UsernameNotFoundException ex) {
-            throw new AuthException(ErrorConstants.USERNAME_NOT_FOUND, new Object[]{username});
+            throw new AuthException(AuthErrorConstants.USERNAME_NOT_FOUND, new Object[]{username});
         }
 
         List<String> roles = authUserDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
 
         String generalizedResourcePath = generalizeResourcePath(request.getHeader(AuthConstants.RESOURCE_PATH_HEADER));
-        Resource resource = resourceRepository.findByResourcePath(generalizedResourcePath).orElseThrow(() -> new AuthException(ErrorConstants.RESOURCE_NOT_FOUND, new Object[]{generalizedResourcePath}));
+        Resource resource = resourceRepository.findByResourcePath(generalizedResourcePath).orElseThrow(() -> new AuthException(AuthErrorConstants.RESOURCE_NOT_FOUND, new Object[]{generalizedResourcePath}));
 
         boolean isAuthorized = isResourceAuthorized(roles, resource.getRoles().stream().map(r -> r.getName().name()).collect(Collectors.toList()));
 
         if (!isAuthorized) {
-            throw new AuthException(ErrorConstants.RESOURCE_NOT_AUTHORIZED, new Object[]{username, generalizedResourcePath});
+            throw new AuthException(AuthErrorConstants.RESOURCE_NOT_AUTHORIZED, new Object[]{username, generalizedResourcePath});
         }
         AuthorizeResourceResponseDTO authorizeResourceResponseDTO = AuthorizeResourceResponseDTO.builder()
                 .userId(authUserDetails.getId())

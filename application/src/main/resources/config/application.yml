@@ -32,6 +32,8 @@ spring:
   web:
     resources:
       add-mappings: false
+  messages:
+    basename: auth-messages, common-messages
 
 # App Properties
 auth:
