@@ -70,4 +70,17 @@
         </rollback>
     </changeSet>
 
+    <changeSet author="PyroSandro" id="AUTH_SQL_010_tables" logicalFilePath="AUTH" labels="1.0.0">
+        <sqlFile encoding="utf8"
+                 path="sql/AUTH_SQL_010/AUTH_SQL_010_tables.sql"
+                 relativeToChangelogFile="true" splitStatements="true"
+                 stripComments="true" />
+        <rollback>
+            <sqlFile encoding="utf8"
+                     path="sql/AUTH_SQL_010/rollback/RB_AUTH_SQL_010_tables.sql"
+                     relativeToChangelogFile="true" splitStatements="true"
+                     stripComments="true" />
+        </rollback>
+    </changeSet>
+
 </databaseChangeLog>

@@ -20,6 +20,9 @@ public enum AuthErrorConstants {
     METHOD_ARGUMENT_NOT_VALID(1011),
     USERNAME_NOT_FOUND(1012),
     ROLE_NOT_FOUND(1013),
+    EXPIRED_JWT_REFRESH_TOKEN(1014),
+    REFRESH_TOKEN_NOT_FOUND(1015),
+    AUTH_USER_NOT_FOUND(1016)
     ;
 
     public final int code;

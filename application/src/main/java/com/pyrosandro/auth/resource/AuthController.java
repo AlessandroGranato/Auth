@@ -1,24 +1,26 @@
 package com.pyrosandro.auth.resource;
 
+import com.pyrosandro.auth.dto.request.RefreshTokenRequestDTO;
 import com.pyrosandro.auth.dto.request.SignInRequestDTO;
 import com.pyrosandro.auth.dto.request.SignUpRequestDTO;
 import com.pyrosandro.auth.dto.response.AuthorizeResourceResponseDTO;
 import com.pyrosandro.auth.dto.response.JwtResponse;
 import com.pyrosandro.auth.dto.response.MessageResponse;
+import com.pyrosandro.auth.dto.response.RefreshTokenResponseDTO;
 import com.pyrosandro.auth.exception.AuthErrorConstants;
 import com.pyrosandro.auth.exception.AuthException;
 import com.pyrosandro.auth.jwt.AuthUserDetails;
 import com.pyrosandro.auth.jwt.JwtUtils;
-import com.pyrosandro.auth.model.AuthUser;
-import com.pyrosandro.auth.model.ERole;
-import com.pyrosandro.auth.model.Resource;
-import com.pyrosandro.auth.model.Role;
+import com.pyrosandro.auth.model.*;
 import com.pyrosandro.auth.repository.AuthUserRepository;
 import com.pyrosandro.auth.repository.ResourceRepository;
 import com.pyrosandro.auth.repository.RoleRepository;
+import com.pyrosandro.auth.service.RefreshTokenService;
 import com.pyrosandro.auth.service.impl.AuthUserDetailsServiceImpl;
 import com.pyrosandro.auth.utils.AuthConstants;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -32,6 +34,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,6 +52,7 @@ public class AuthController {
     JwtUtils jwtUtils;
     AuthUserDetailsServiceImpl authUserDetailsService;
     ResourceRepository resourceRepository;
+    RefreshTokenService refreshTokenService;
 
     public AuthController(
             AuthenticationManager authenticationManager,
@@ -57,7 +61,8 @@ public class AuthController {
             PasswordEncoder encoder,
             JwtUtils jwtUtils,
             AuthUserDetailsServiceImpl authUserDetailsService,
-            ResourceRepository resourceRepository) {
+            ResourceRepository resourceRepository,
+            RefreshTokenService refreshTokenService) {
         this.authenticationManager = authenticationManager;
         this.authUserRepository = authUserRepository;
         this.roleRepository = roleRepository;
@@ -65,6 +70,7 @@ public class AuthController {
         this.jwtUtils = jwtUtils;
         this.authUserDetailsService = authUserDetailsService;
         this.resourceRepository = resourceRepository;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @PostMapping("/signup")
@@ -122,8 +128,11 @@ public class AuthController {
         AuthUserDetails authUserDetails = (AuthUserDetails) authentication.getPrincipal();
         List<String> roles = authUserDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
 
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(authUserDetails.getId());
+
         JwtResponse jwtResponse = JwtResponse.builder()
-                .token(jwt)
+                .accessToken(jwt)
+                .refreshToken(refreshToken.getRefreshToken())
                 .id(authUserDetails.getId())
                 .type("Bearer")
                 .username(authUserDetails.getUsername())
@@ -131,6 +140,19 @@ public class AuthController {
                 .roles(roles).build();
 
         return ResponseEntity.ok(jwtResponse);
+
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequestDTO refreshTokenRequestDTO) throws AuthException {
+        Optional<RefreshToken> refreshToken = refreshTokenService.findByToken(refreshTokenRequestDTO.getRefreshToken());
+        if(refreshToken.isEmpty()) {
+            throw new AuthException(AuthErrorConstants.REFRESH_TOKEN_NOT_FOUND, null);
+        }
+        refreshTokenService.verifyExpiration(refreshToken.get());
+        String jwtResponse = jwtUtils.generateJwtTokenFromUsername(refreshToken.get().getAuthUser().getUsername());
+        RefreshTokenResponseDTO refreshTokenResponseDTO = new RefreshTokenResponseDTO(jwtResponse, refreshToken.get().getRefreshToken());
+        return ResponseEntity.ok(refreshTokenResponseDTO);
 
     }
 
@@ -166,6 +188,21 @@ public class AuthController {
                 .build();
         return ResponseEntity.ok(authorizeResourceResponseDTO);
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteYourEntity(@PathVariable Long id) throws AuthException {
+        Optional<AuthUser> authUser = authUserRepository.findById(id);
+        if (authUser.isPresent()) {
+            authUser.get().getRoles().clear();
+            refreshTokenService.deleteByUserId(authUser.get().getId());
+            authUserRepository.delete(authUser.get());
+            return new ResponseEntity<>("Entity deleted successfully", HttpStatus.OK);
+        } else {
+            throw new AuthException(AuthErrorConstants.AUTH_USER_NOT_FOUND, null);
+        }
+    }
+
 
     private String generalizeResourcePath(String resourcePath) {
         Pattern pattern = Pattern.compile("\\{[^}]+\\}");

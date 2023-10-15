@@ -1,8 +1,23 @@
 High priority:
+Understand if it's possible to discriminate among exceptions returned by Spring security
+    - For example, investigate if it's possible to understand which reason triggered AccessDeniedException
+        - In this way, we can add the AuthErrorConstants as code for the exception and return this to FE
+
+Add error code to ErrorDTO
+    - we create (or change) buildErrorDTO method that will also accept the application error code
+    - For spring errors (AccessDeniedException, etc), we will return a generic error code
+
+
 
 Medium priority:
+Insert unit and integration tests (learn how to correctly test first)
 
 Low priority:
+Create a batch that periodically checks the table auth_refresh_tokens and removes all expired tokens
+    How can there be more than one refresh token for a user?
+        an expired refresh token can be in the database if it is expired and the user didn't use the referesh token api
+        if the user performs multiple logins, different refresh tokens will be created
+
 Refactor classes introducing lombok annotations (for example remove constructors and replace them with RequiredArgsConstructor)
 
 No priority:
@@ -12,3 +27,12 @@ Refactor app introducing service.
         - It would change a lot of things and introduce complexity between layers (mappers, objects, and so on) that are not required in a microservice that (hopefully) will remain kind the same
 
 
+Tests:
+- Registration
+- Login
+- access protected resource without access token
+- access protected resource with access token
+- access protected resource with expired access token
+- ask for refresh token
+- access protected resource with new access token
+- ask for refresh token with expired refresh token

@@ -8,22 +8,28 @@ import com.pyrosandro.common.error.ErrorConstants;
 import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
+import java.util.Locale;
 
 @Component
 @Slf4j
 public class JwtUtils {
 
-    @Value("${auth.jwt-secret}")
-    private String jwtSecret;
+    public JwtUtils(@Value("${auth.jwt-secret}") String jwtSecret, @Value("${auth.jwt-access-token-expiration-ms}") Long jwtAccessTokenExpirationMs,  MessageSource messageSource) {
+        this.jwtSecret = jwtSecret;
+        this. jwtAccessTokenExpirationMs = jwtAccessTokenExpirationMs;
+        this.messageSource = messageSource;
+    }
 
-    @Value("${auth.jwt-expiration-ms}")
-    private Long jwtExpirationMs;
+    private final String jwtSecret;
+    private final Long jwtAccessTokenExpirationMs;
+    protected final MessageSource messageSource;
 
     public String generateJwtToken(Authentication authentication) {
         AuthUserDetails authUserPrincipal = (AuthUserDetails) authentication.getPrincipal();
@@ -32,7 +38,22 @@ public class JwtUtils {
             jwtToken = Jwts.builder()
                     .setSubject(authUserPrincipal.getUsername())
                     .setIssuedAt(new Date())
-                    .setExpiration(new Date((new Date().getTime() + jwtExpirationMs)))
+                    .setExpiration(new Date((new Date().getTime() + jwtAccessTokenExpirationMs)))
+                    .signWith(SignatureAlgorithm.HS512, jwtSecret)
+                    .compact();
+        } catch (Exception e) {
+            log.error("Error while generating the token: {}", e.getMessage());
+        }
+        return jwtToken;
+    }
+
+    public String generateJwtTokenFromUsername(String username) {
+        String jwtToken = null;
+        try {
+            jwtToken = Jwts.builder()
+                    .setSubject(username)
+                    .setIssuedAt(new Date())
+                    .setExpiration(new Date((new Date().getTime() + jwtAccessTokenExpirationMs)))
                     .signWith(SignatureAlgorithm.HS512, jwtSecret)
                     .compact();
         } catch (Exception e) {
@@ -51,16 +72,22 @@ public class JwtUtils {
             Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(authToken);
             return true;
         } catch (SignatureException e) {
+            log.error( messageSource.getMessage(String.valueOf(AuthErrorConstants.INVALID_JWT_SIGNATURE.code), null, Locale.getDefault()));
             throw new AuthException(AuthErrorConstants.INVALID_JWT_SIGNATURE, null);
         } catch (MalformedJwtException e) {
+            log.error( messageSource.getMessage(String.valueOf(AuthErrorConstants.MALFORMED_JWT.code), null, Locale.getDefault()));
             throw new AuthException(AuthErrorConstants.MALFORMED_JWT, null);
         } catch (ExpiredJwtException e) {
+            log.error( messageSource.getMessage(String.valueOf(AuthErrorConstants.EXIPERD_JWT.code), null, Locale.getDefault()));
             throw new AuthException(AuthErrorConstants.EXIPERD_JWT, null);
         } catch (UnsupportedJwtException e) {
+            log.error( messageSource.getMessage(String.valueOf(AuthErrorConstants.UNSUPPORTED_JWT.code), null, Locale.getDefault()));
             throw new AuthException(AuthErrorConstants.UNSUPPORTED_JWT, null);
         } catch (IllegalArgumentException e) {
+            log.error( messageSource.getMessage(String.valueOf(AuthErrorConstants.ILLEGAL_JWT_ARGUMENT.code), null, Locale.getDefault()));
             throw new AuthException(AuthErrorConstants.ILLEGAL_JWT_ARGUMENT, null);
         } catch (Exception e) {
+            log.error( messageSource.getMessage(String.valueOf(ErrorConstants.GENERIC_ERROR.code), null, Locale.getDefault()));
             throw new CommonException(ErrorConstants.GENERIC_ERROR, null, e.getMessage(), e);
         }
     }
