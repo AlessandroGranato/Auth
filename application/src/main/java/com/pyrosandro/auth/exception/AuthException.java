@@ -1,8 +1,10 @@
 package com.pyrosandro.auth.exception;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class AuthException extends Exception {
 
     private final AuthErrorConstants errorCode;
