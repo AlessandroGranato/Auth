@@ -18,5 +18,7 @@ create table auth.auth_roles (
 create table auth.auth_users_roles (
     auth_user_id bigint not null,
     auth_role_id int not null,
-    primary key(auth_user_id, auth_role_id)
+    primary key(auth_user_id, auth_role_id),
+    foreign key (auth_user_id) references auth.auth_users (id) on delete cascade,
+    foreign key (auth_role_id) references auth.auth_roles (id) on delete cascade
 );

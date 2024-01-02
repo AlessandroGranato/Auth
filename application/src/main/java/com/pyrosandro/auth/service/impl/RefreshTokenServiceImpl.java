@@ -9,6 +9,7 @@ import com.pyrosandro.auth.service.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
@@ -40,7 +41,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         refreshToken.setAuthUser(authUserRepository.getById(userId));
         refreshToken.setRefreshToken(UUID.randomUUID().toString());
         refreshToken.setExpirationDate(LocalDateTime.now().plus(jwtRefreshTokenExpirationMs, ChronoUnit.MILLIS));
-        log.info("refreshToken: {}", refreshToken.toString());
+        log.info("refreshToken: {}", refreshToken);
         refreshTokenRepository.save(refreshToken);
         return refreshToken;
     }
@@ -50,7 +51,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public RefreshToken verifyExpiration(RefreshToken token) throws AuthException {
         if (token.getExpirationDate().compareTo(LocalDateTime.now()) < 0) {
             refreshTokenRepository.delete(token);
-            throw new AuthException(AuthErrorConstants.EXPIRED_JWT_REFRESH_TOKEN, null);
+            throw new AuthException(AuthErrorConstants.EXPIRED_JWT_REFRESH_TOKEN, null, HttpStatus.FORBIDDEN);
         }
         return token;
     }
