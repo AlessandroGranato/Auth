@@ -10,7 +10,7 @@ Add error code to ErrorDTO
 
 
 Medium priority:
-Insert unit and integration tests (learn how to correctly test first)
+    Insert unit and integration tests (learn how to correctly test first)
 
 Low priority:
 Create a batch that periodically checks the table auth_refresh_tokens and removes all expired tokens
@@ -36,3 +36,13 @@ Tests:
 - ask for refresh token
 - access protected resource with new access token
 - ask for refresh token with expired refresh token
+- get authorize resource
+    Example:
+        insert into auth.auth_resources (resource_path) values ('/auth/api/auth/*/test/*');
+        insert into auth.auth_resources_roles(resource_id, auth_role_id) values((select s.id from auth.auth_resources s where s.resource_path = '/auth/api/auth/*/test/*'), 2);
+        insert into auth.auth_resources_roles(resource_id, auth_role_id) values((select s.id from auth.auth_resources s where s.resource_path = '/auth/api/auth/*/test/*'), 3);
+        select * from auth.auth_resources ar;
+        select * from auth.auth_resources_roles arr;
+        use the get authorize-resource api with header Resource-Identifier valorized as this: /auth/api/auth/{auth_user_id}/test/{test}
+
+

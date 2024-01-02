@@ -9,6 +9,7 @@ import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -73,19 +74,19 @@ public class JwtUtils {
             return true;
         } catch (SignatureException e) {
             log.error( messageSource.getMessage(String.valueOf(AuthErrorConstants.INVALID_JWT_SIGNATURE.code), null, Locale.getDefault()));
-            throw new AuthException(AuthErrorConstants.INVALID_JWT_SIGNATURE, null);
+            throw new AuthException(AuthErrorConstants.INVALID_JWT_SIGNATURE, null, HttpStatus.UNAUTHORIZED);
         } catch (MalformedJwtException e) {
             log.error( messageSource.getMessage(String.valueOf(AuthErrorConstants.MALFORMED_JWT.code), null, Locale.getDefault()));
-            throw new AuthException(AuthErrorConstants.MALFORMED_JWT, null);
+            throw new AuthException(AuthErrorConstants.MALFORMED_JWT, null, HttpStatus.UNAUTHORIZED);
         } catch (ExpiredJwtException e) {
             log.error( messageSource.getMessage(String.valueOf(AuthErrorConstants.EXIPERD_JWT.code), null, Locale.getDefault()));
-            throw new AuthException(AuthErrorConstants.EXIPERD_JWT, null);
+            throw new AuthException(AuthErrorConstants.EXIPERD_JWT, null, HttpStatus.UNAUTHORIZED);
         } catch (UnsupportedJwtException e) {
             log.error( messageSource.getMessage(String.valueOf(AuthErrorConstants.UNSUPPORTED_JWT.code), null, Locale.getDefault()));
-            throw new AuthException(AuthErrorConstants.UNSUPPORTED_JWT, null);
+            throw new AuthException(AuthErrorConstants.UNSUPPORTED_JWT, null, HttpStatus.UNAUTHORIZED);
         } catch (IllegalArgumentException e) {
             log.error( messageSource.getMessage(String.valueOf(AuthErrorConstants.ILLEGAL_JWT_ARGUMENT.code), null, Locale.getDefault()));
-            throw new AuthException(AuthErrorConstants.ILLEGAL_JWT_ARGUMENT, null);
+            throw new AuthException(AuthErrorConstants.ILLEGAL_JWT_ARGUMENT, null, HttpStatus.UNAUTHORIZED);
         } catch (Exception e) {
             log.error( messageSource.getMessage(String.valueOf(ErrorConstants.GENERIC_ERROR.code), null, Locale.getDefault()));
             throw new CommonException(ErrorConstants.GENERIC_ERROR, null, e.getMessage(), e);

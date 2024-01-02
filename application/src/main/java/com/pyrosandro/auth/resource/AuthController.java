@@ -76,10 +76,10 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpRequestDTO signUpRequestDTO) throws AuthException {
         if (authUserRepository.existsByUsername(signUpRequestDTO.getUsername())) {
-            throw new AuthException(AuthErrorConstants.USERNAME_ALREADY_USED, null);
+            throw new AuthException(AuthErrorConstants.USERNAME_ALREADY_USED, null, HttpStatus.BAD_REQUEST);
         }
         if (authUserRepository.existsByEmail(signUpRequestDTO.getEmail())) {
-            throw new AuthException(AuthErrorConstants.EMAIL_ALREADY_USED, null);
+            throw new AuthException(AuthErrorConstants.EMAIL_ALREADY_USED, null, HttpStatus.BAD_REQUEST);
         }
 
         Set<String> strRoles = signUpRequestDTO.getRoles();
@@ -107,7 +107,7 @@ public class AuthController {
                 });
             }
         } catch (RuntimeException e) {
-            throw new AuthException(AuthErrorConstants.ROLE_NOT_FOUND, null);
+            throw new AuthException(AuthErrorConstants.ROLE_NOT_FOUND, null, HttpStatus.NOT_FOUND);
         }
         AuthUser authUser = new AuthUser();
         authUser.setUsername(signUpRequestDTO.getUsername());
@@ -147,7 +147,7 @@ public class AuthController {
     public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequestDTO refreshTokenRequestDTO) throws AuthException {
         Optional<RefreshToken> refreshToken = refreshTokenService.findByToken(refreshTokenRequestDTO.getRefreshToken());
         if(refreshToken.isEmpty()) {
-            throw new AuthException(AuthErrorConstants.REFRESH_TOKEN_NOT_FOUND, null);
+            throw new AuthException(AuthErrorConstants.REFRESH_TOKEN_NOT_FOUND, null, HttpStatus.FORBIDDEN);
         }
         refreshTokenService.verifyExpiration(refreshToken.get());
         String jwtResponse = jwtUtils.generateJwtTokenFromUsername(refreshToken.get().getAuthUser().getUsername());
@@ -161,7 +161,7 @@ public class AuthController {
 
         String jwt = jwtUtils.parseJwt(request);
         if (jwt == null) {
-            throw new AuthException(AuthErrorConstants.MISSING_AUTHORIZATION_HEADER, null);
+            throw new AuthException(AuthErrorConstants.MISSING_AUTHORIZATION_HEADER, null, HttpStatus.UNAUTHORIZED);
         }
         jwtUtils.validateJwtToken(jwt);
         String username = jwtUtils.getUsernameFromJwtToken(jwt);
@@ -169,18 +169,18 @@ public class AuthController {
         try {
             authUserDetails = (AuthUserDetails) authUserDetailsService.loadUserByUsername(username);
         } catch (UsernameNotFoundException ex) {
-            throw new AuthException(AuthErrorConstants.USERNAME_NOT_FOUND, new Object[]{username});
+            throw new AuthException(AuthErrorConstants.USERNAME_NOT_FOUND, new Object[]{username}, HttpStatus.NOT_FOUND);
         }
 
         List<String> roles = authUserDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
 
         String generalizedResourcePath = generalizeResourcePath(request.getHeader(AuthConstants.RESOURCE_PATH_HEADER));
-        Resource resource = resourceRepository.findByResourcePath(generalizedResourcePath).orElseThrow(() -> new AuthException(AuthErrorConstants.RESOURCE_NOT_FOUND, new Object[]{generalizedResourcePath}));
+        Resource resource = resourceRepository.findByResourcePath(generalizedResourcePath).orElseThrow(() -> new AuthException(AuthErrorConstants.RESOURCE_NOT_FOUND, new Object[]{generalizedResourcePath}, HttpStatus.NOT_FOUND));
 
         boolean isAuthorized = isResourceAuthorized(roles, resource.getRoles().stream().map(r -> r.getName().name()).collect(Collectors.toList()));
 
         if (!isAuthorized) {
-            throw new AuthException(AuthErrorConstants.RESOURCE_NOT_AUTHORIZED, new Object[]{username, generalizedResourcePath});
+            throw new AuthException(AuthErrorConstants.RESOURCE_NOT_AUTHORIZED, new Object[]{username, generalizedResourcePath}, HttpStatus.UNAUTHORIZED);
         }
         AuthorizeResourceResponseDTO authorizeResourceResponseDTO = AuthorizeResourceResponseDTO.builder()
                 .userId(authUserDetails.getId())
@@ -199,7 +199,7 @@ public class AuthController {
             authUserRepository.delete(authUser.get());
             return new ResponseEntity<>("Entity deleted successfully", HttpStatus.OK);
         } else {
-            throw new AuthException(AuthErrorConstants.AUTH_USER_NOT_FOUND, null);
+            throw new AuthException(AuthErrorConstants.AUTH_USER_NOT_FOUND, null, HttpStatus.NOT_FOUND);
         }
     }
 
@@ -217,14 +217,5 @@ public class AuthController {
                         .anyMatch(userRole::equals));
     }
 
-//    private boolean isResourceAuthorized(List<String> userRoles, List<String> resourceRoles) {
-//        for (String userRole : userRoles) {
-//            for (String resourceRole : resourceRoles) {
-//                if (userRole.equals(resourceRole)) {
-//                    return true;
-//                }
-//            }
-//        }
-//        return false;
-//    }
+
 }
