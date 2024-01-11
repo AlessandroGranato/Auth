@@ -83,4 +83,17 @@
         </rollback>
     </changeSet>
 
+    <changeSet author="PyroSandro" id="AUTH_SQL_12_data" logicalFilePath="AUTH" labels="1.0.0">
+        <sqlFile encoding="utf8"
+                 path="sql/AUTH_SQL_12/AUTH_SQL_12_data.sql"
+                 relativeToChangelogFile="true" splitStatements="true"
+                 stripComments="true" />
+        <rollback>
+            <sqlFile encoding="utf8"
+                     path="sql/AUTH_SQL_12/rollback/RB_AUTH_SQL_12_data.sql"
+                     relativeToChangelogFile="true" splitStatements="true"
+                     stripComments="true" />
+        </rollback>
+    </changeSet>
+
 </databaseChangeLog>

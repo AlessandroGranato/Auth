@@ -21,7 +21,7 @@
 	<properties>
 		<revision>0.0.1-SNAPSHOT</revision>
 		<java.version>11</java.version>
-		<common-bom-version>0.2.0-SNAPSHOT</common-bom-version>
+		<common-bom-version>0.3.0-SNAPSHOT</common-bom-version>
 		<flatten.maven.plugin.version>1.1.0</flatten.maven.plugin.version>
 		<mapstruct.version>1.4.2.Final</mapstruct.version>
 		<spring-cloud.version>2021.0.7</spring-cloud.version>
