@@ -11,8 +11,11 @@ Add error code to ErrorDTO
 
 Medium priority:
     Insert unit and integration tests (learn how to correctly test first)
+    Add authUser crud operations
 
 Low priority:
+when performing the login, check if there are valid refresh tokens for the current user in auth.auth_refresh_tokens
+    if yes, consider to set their expiration date to now or delete them directly
 Create a batch that periodically checks the table auth_refresh_tokens and removes all expired tokens
     How can there be more than one refresh token for a user?
         an expired refresh token can be in the database if it is expired and the user didn't use the referesh token api
