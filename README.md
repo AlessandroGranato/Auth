@@ -4,46 +4,75 @@ Auth module with Spring boot and JWT technologies
 ## Project main guide
 https://www.bezkoder.com/spring-boot-jwt-authentication/
 
-## Using Docker to simplify development
+## Using Docker to deploy
+The steps to run the application in docker are the following:
 
+### Ensure you have a working Docker instance
 Ensure that Docker Desktop or similar are active.
 
-To start a postgresql database in a docker container, run:
-
+### Ensure you have a docker network already up
+If you don't have it, run the following command:
 ```
-docker-compose -f application/src/main/docker/postgresql.yml up -d
-```
-
-To start a kafka cluster in a docker container, run:
-
-```
-docker-compose -f application/src/main/docker/kafka.yml up -d
+docker network create boogle-network
 ```
 
-To stop a container (in this example postgres), run:
+### Create docker images
+To create the docker images of the db and the application, go on the root of the project and run:
+```
+mvn clean install -Plocal-image
+```
+
+If you only want to create only the db image, run the previous command from packager-db sumbodule instead of root.
+
+If you only want to create only the application image, run the previous command from packager sumbodule instead of root.
+
+### Run db docker container
+
+To run a docker db container, run the following command and populate the db variables as you need:
 
 ```
-docker-compose -f application/src/main/docker/postgresql.yml stop
-
+docker run --name boogle-auth-db --network=boogle-network -e POSTGRES_DB=dbAuth -e POSTGRES_USER=dbAuth -e POSTGRES_PASSWORD=dbAuth -dp 127.0.0.1:5433:5432 pyrosandro/boogle-auth-db-image:0.0.1-SNAPSHOT
 ```
 
-### Reference Documentation
-For further reference, please consider the following sections:
+Command explanation:
+1. **docker run:** This is the command to run a Docker container.
+2. **--name boogle-auth-db:** This option specifies the name of the container as "boogle-auth-db". The --name flag allows you to assign a custom name to the container instead of Docker generating a random one.
+3. **--network=boogle-network:** This option specifies the network to which the container should be attached. It connects the container to the "boogle-network" Docker network.
+4. **-e POSTGRES_DB=dbAuth:** This option sets the environment variable POSTGRES_DB inside the container to "dbAuth". This variable is used to specify the name of the PostgreSQL database to be created inside the container.
+5. **-e POSTGRES_USER=dbAuth:** This option sets the environment variable POSTGRES_USER inside the container to "dbAuth". This variable is used to specify the username for connecting to the PostgreSQL database.
+6. **-e POSTGRES_PASSWORD=dbAuth:** This option sets the environment variable POSTGRES_PASSWORD inside the container to "dbAuth". This variable is used to specify the password for connecting to the PostgreSQL database.
+7. **-dp 127.0.0.1:5433:5432:** This option specifies the port mapping for the container. It maps port 5432 on the container to port 5433 on the host machine (127.0.0.1). The -d flag tells Docker to run the container in detached mode (in the background), and the -p flag specifies the port mapping.
+8. **pyrosandro/boogle-auth-db-image:0.0.1-SNAPSHOT:** This is the name of the Docker image to use for creating the container. It specifies the image "pyrosandro/boogle-auth-db-image" with the tag "0.0.1-SNAPSHOT".
 
-* [Official Apache Maven documentation](https://maven.apache.org/guides/index.html)
-* [Spring Boot Maven Plugin Reference Guide](https://docs.spring.io/spring-boot/docs/3.0.6/maven-plugin/reference/html/)
-* [Create an OCI image](https://docs.spring.io/spring-boot/docs/3.0.6/maven-plugin/reference/html/#build-image)
-* [Spring Web](https://docs.spring.io/spring-boot/docs/3.0.6/reference/htmlsingle/#web)
-* [Spring Security](https://docs.spring.io/spring-boot/docs/3.0.6/reference/htmlsingle/#web.security)
-* [Spring Data JPA](https://docs.spring.io/spring-boot/docs/3.0.6/reference/htmlsingle/#data.sql.jpa-and-spring-data)
+### Install liquibase scripts
 
-### Guides
-The following guides illustrate how to use some features concretely:
+Once the db is installed, you can run your liquibase scripts by going into liquibase folder and run the following command:
 
-* [Building a RESTful Web Service](https://spring.io/guides/gs/rest-service/)
-* [Serving Web Content with Spring MVC](https://spring.io/guides/gs/serving-web-content/)
-* [Building REST services with Spring](https://spring.io/guides/tutorials/rest/)
-* [Securing a Web Application](https://spring.io/guides/gs/securing-web/)
-* [Spring Boot and OAuth2](https://spring.io/guides/tutorials/spring-boot-oauth2/)
-* [Authenticating a User with LDAP](https://spring.io/guides/gs/authenticating-ldap/)
-* [Accessing Data with JPA](https://spring.io/guides/gs/accessing-data-jpa/)
+```
+mvn install -Pliquibase
+```
+
+Note: if you need to rollback your scripts, run the following command (in the example, we rollback the last 2 scripts from master.xml):
+
+```
+mvn clean -Pliquibase -Dliquibase.rollbackCount=2
+```
+
+### Run app docker container
+
+To run a docker app container, run the following command and populate the variables as needed.
+
+```
+docker run --name boogle-auth --network=boogle-network -e "SPRING_CONFIG_ADDITIONAL_LOCATION=/config/external-props.yml" -v C:\Users\PyroSandro\Desktop\PublicRepos\boogle-extra\auth-external-props.yml:/config/external-props.yml -dp 127.0.0.1:8081:8081 pyrosandro/boogle-auth-image:0.0.1-SNAPSHOT
+```
+
+Command explanation:
+1. **docker run:** This is the command used to run a Docker container.
+2. **--name boogle-auth:** This option sets the name of the container to "boogle-auth". The --name flag allows you to assign a custom name to the container instead of Docker generating a random one.
+3. **--network=boogle-network:** This option specifies the network to which the container should be attached. It connects the container to the Docker network named "boogle-network".
+4. **-e "SPRING_CONFIG_ADDITIONAL_LOCATION=/config/external-props.yml":** This option sets an environment variable within the container. It defines an additional location for Spring configuration properties (external-props.yml). This environment variable allows the application inside the container to load configuration from an external file.
+5. **-v C:\Users\PyroSandro\Desktop\PublicRepos\boogle-extra\auth-external-props.yml:/config/external-props.yml:** This option mounts a volume from the host machine to the container. It maps the local file external-props.yml located on the host machine's desktop (C:\Users\PyroSandro\Desktop\PublicRepos\boogle-extra\auth-external-props.yml) to the container's /config/external-props.yml path. This volume mounting allows the containerized application to access configuration files from the host machine.
+6. **-dp 127.0.0.1:8081:8081:** This option specifies the port mapping for the container. It maps port 8081 on the container to port 8081 on the host machine (127.0.0.1). The -d flag runs the container in detached mode (in the background), and the -p flag specifies the port mapping.
+7. **pyrosandro/boogle-auth-image:0.0.1-SNAPSHOT:** This part of the command specifies the Docker image to use for creating the container. It specifies the image "pyrosandro/boogle-auth-image" with the tag "0.0.1-SNAPSHOT".
+
+Note: The external-props.yml file should contain the values of the variables needed in application.yml file. For an example, you can see the file application-localdev.yml 
