@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.pyrosandro</groupId>
+        <artifactId>auth</artifactId>
+        <version>${revision}</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>packager</artifactId>
+
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <docker.repo>pyrosandro</docker.repo>
+        <docker.repo.url>${docker.repo}</docker.repo.url>
+        <docker.image.name>boogle-auth-image</docker.image.name>
+        <resources.path>${project.basedir}</resources.path>
+        <application.group.id>com.pyrosandro</application.group.id>
+        <application.name>application</application.name>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>${application.group.id}</groupId>
+            <artifactId>${application.name}</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${application.group.id}</groupId>
+                                    <artifactId>${application.name}</artifactId>
+                                    <type>jar</type>
+                                    <outputDirectory>${project.build.directory}/</outputDirectory>
+                                    <destFileName>${application.name}.jar</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>local-image</id>
+            <properties>
+                <packaging.type>pom</packaging.type>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>build-image</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>docker</executable>
+                                    <workingDirectory>${resources.path}</workingDirectory>
+                                    <arguments>
+                                        <argument>build</argument>
+                                        <argument>-t</argument>
+                                        <argument>${docker.repo.url}/${docker.image.name}:${project.version}</argument>
+                                        <argument>.</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>build-docker-image</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.gmaven</groupId>
+                        <artifactId>gmaven-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                            <execution>
+                                <id>get-date</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <configuration>
+                                    <properties>
+                                        <script>date</script>
+                                    </properties>
+                                    <source>
+                                        def command = project.properties.script
+                                        def process = command.execute()
+                                        process.waitFor()
+                                        def buildDate = process.in.text.trim()
+                                        project.properties.dockerBuildDate = buildDate
+                                    </source>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>get-hostname</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <configuration>
+                                    <properties>
+                                        <script>hostname</script>
+                                    </properties>
+                                    <source>
+                                        def command = project.properties.script
+                                        def process = command.execute()
+                                        process.waitFor()
+                                        def buildHostname = process.in.text.trim()
+                                        project.properties.dockerBuildHostname = buildHostname
+                                    </source>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>get-revision</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <configuration>
+                                    <properties>
+                                        <script>git rev-parse HEAD</script>
+                                    </properties>
+                                    <source>
+                                        def command = project.properties.script
+                                        def process = command.execute()
+                                        process.waitFor()
+                                        def buildRevision = process.in.text.trim()
+                                        project.properties.dockerBuildRevision = buildRevision
+                                    </source>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>build-image</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>docker</executable>
+                                    <workingDirectory>${resources.path}</workingDirectory>
+                                    <arguments>
+                                        <argument>build</argument>
+                                        <argument>--label</argument>
+                                        <argument>version=${project.version}</argument>
+                                        <argument>--label</argument>
+                                        <argument>build-date=${dockerBuildDate}</argument>
+                                        <argument>--label</argument>
+                                        <argument>build-host=${dockerBuildHostname}</argument>
+                                        <argument>--label</argument>
+                                        <argument>vcs-ref=${dockerBuildRevision}</argument>
+                                        <argument>-t</argument>
+                                        <argument>${docker.repo.url}/${docker.image.name}:${project.version}</argument>
+                                        <argument>.</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>deploy-docker-image</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>deploy-image</id>
+                                <phase>deploy</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>docker</executable>
+                                    <workingDirectory>${resources.path}</workingDirectory>
+                                    <arguments>
+                                        <argument>push</argument>
+                                        <argument>${docker.repo.url}/${docker.image.name}:${project.version}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <!-- tag and push image as latest tag -->
+            <id>tag-and-deploy-as-latest</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>tag-as-latest</id>
+                                <phase>deploy</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>docker</executable>
+                                    <workingDirectory>${resources.path}</workingDirectory>
+                                    <arguments>
+                                        <argument>tag</argument>
+                                        <argument>${docker.repo.url}/${docker.image.name}:${project.version}</argument>
+                                        <argument>${docker.repo.url}/${docker.image.name}:latest</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>deploy-as-latest</id>
+                                <phase>deploy</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>docker</executable>
+                                    <workingDirectory>${resources.path}</workingDirectory>
+                                    <arguments>
+                                        <argument>push</argument>
+                                        <argument>${docker.repo.url}/${docker.image.name}:latest</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>

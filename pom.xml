@@ -3,10 +3,6 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
-    <modules>
-        <module>application</module>
-		<module>liquibase</module>
-	</modules>
     <parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
@@ -26,6 +22,14 @@
 		<mapstruct.version>1.4.2.Final</mapstruct.version>
 		<spring-cloud.version>2021.0.7</spring-cloud.version>
 	</properties>
+
+	<modules>
+		<module>application</module>
+		<module>liquibase</module>
+		<module>packager</module>
+		<module>packager-db</module>
+	</modules>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
