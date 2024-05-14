@@ -63,7 +63,7 @@ mvn clean -Pliquibase -Dliquibase.rollbackCount=2
 To run a docker app container, run the following command and populate the variables as needed.
 
 ```
-docker run --name boogle-auth --network=boogle-network -e "SPRING_CONFIG_ADDITIONAL_LOCATION=/config/external-props.yml" -v C:\Users\PyroSandro\Desktop\PublicRepos\boogle-extra\auth-external-props.yml:/config/external-props.yml -dp 127.0.0.1:8081:8081 pyrosandro/boogle-auth-image:0.0.1-SNAPSHOT
+docker run --name boogle-auth --network=boogle-network -e "SPRING_CONFIG_ADDITIONAL_LOCATION=/config/external-props.yml" -v C:\Users\PyroSandro\Desktop\PublicRepos\boogle\boogle-extra\auth-external-props.yml:/config/external-props.yml -dp 127.0.0.1:8081:8081 pyrosandro/boogle-auth-image:0.0.1-SNAPSHOT
 ```
 
 Command explanation:
@@ -71,8 +71,41 @@ Command explanation:
 2. **--name boogle-auth:** This option sets the name of the container to "boogle-auth". The --name flag allows you to assign a custom name to the container instead of Docker generating a random one.
 3. **--network=boogle-network:** This option specifies the network to which the container should be attached. It connects the container to the Docker network named "boogle-network".
 4. **-e "SPRING_CONFIG_ADDITIONAL_LOCATION=/config/external-props.yml":** This option sets an environment variable within the container. It defines an additional location for Spring configuration properties (external-props.yml). This environment variable allows the application inside the container to load configuration from an external file.
-5. **-v C:\Users\PyroSandro\Desktop\PublicRepos\boogle-extra\auth-external-props.yml:/config/external-props.yml:** This option mounts a volume from the host machine to the container. It maps the local file external-props.yml located on the host machine's desktop (C:\Users\PyroSandro\Desktop\PublicRepos\boogle-extra\auth-external-props.yml) to the container's /config/external-props.yml path. This volume mounting allows the containerized application to access configuration files from the host machine.
+5. **-v C:\Users\PyroSandro\Desktop\PublicRepos\boogle\boogle-extra\auth-external-props.yml:/config/external-props.yml:** This option mounts a volume from the host machine to the container. It maps the local file external-props.yml located on the host machine's desktop (C:\Users\PyroSandro\Desktop\PublicRepos\boogle\boogle-extra\auth-external-props.yml) to the container's /config/external-props.yml path. This volume mounting allows the containerized application to access configuration files from the host machine.
 6. **-dp 127.0.0.1:8081:8081:** This option specifies the port mapping for the container. It maps port 8081 on the container to port 8081 on the host machine (127.0.0.1). The -d flag runs the container in detached mode (in the background), and the -p flag specifies the port mapping.
 7. **pyrosandro/boogle-auth-image:0.0.1-SNAPSHOT:** This part of the command specifies the Docker image to use for creating the container. It specifies the image "pyrosandro/boogle-auth-image" with the tag "0.0.1-SNAPSHOT".
 
-Note: The external-props.yml file should contain the values of the variables needed in application.yml file. For an example, you can see the file application-localdev.yml 
+Note: The external-props.yml file should contain the values of the variables needed in application.yml file. For an example, you can see the file application-localdev.yml
+
+## Deploy artifacts and docker images
+
+### Deploy artifacts on github packages 
+To deploy artifacts on github packages, ensure that in pom.xml you have set up the distribution management that allows you to specify to which repo you will push your artifact
+```
+<distributionManagement>
+    <repository>
+        <id>my-github-repos</id>
+        <name>GitHub alessandrogranato auth repo</name>
+        <url>https://maven.pkg.github.com/alessandrogranato/auth</url>
+    </repository>
+</distributionManagement>
+```
+
+To deploy the artifacts, simply run the following command:
+
+```
+mvn clean deploy
+```
+
+### Deploy docker images on dockerhub
+To deploy application and db docker images, go on parent pom folder and launch the following command:
+```
+mvn clean deploy -Plocal-image -Pdeploy-docker-image
+```
+This command will create the docker images from packager and packager-db submodules using the profile local-image, then they will be deployed using the profile deploy-docker-image.
+
+### Deploy artifacts and docker images all at once
+Since with mvn clean deploy we push artifacts on github packages and adding -Plocal-image and -Pdeploy-doker-image we add profiles to create and push docker images on docker repos, we can simply go in parent folder (where there is parent pom.xml file) and launch the following command to upload everything together. (Yes, it's equal to the previous command)
+```
+mvn clean deploy -Plocal-image -Pdeploy-docker-image
+```
