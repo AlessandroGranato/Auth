@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>packager-db</artifactId>
+    <artifactId>auth-packager-db</artifactId>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>

@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>packager</artifactId>
+    <artifactId>auth-packager</artifactId>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
@@ -19,7 +19,8 @@
         <docker.image.name>boogle-auth-image</docker.image.name>
         <resources.path>${project.basedir}</resources.path>
         <application.group.id>com.pyrosandro</application.group.id>
-        <application.name>application</application.name>
+        <application.name>auth-application</application.name>
+        <application.dest.name>application</application.dest.name>
     </properties>
 
     <dependencies>
@@ -49,7 +50,7 @@
                                     <artifactId>${application.name}</artifactId>
                                     <type>jar</type>
                                     <outputDirectory>${project.build.directory}/</outputDirectory>
-                                    <destFileName>${application.name}.jar</destFileName>
+                                    <destFileName>${application.dest.name}.jar</destFileName>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
