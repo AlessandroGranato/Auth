@@ -199,7 +199,7 @@
         </profile>
 
         <profile>
-            <id>deploy-docker-image</id>
+            <id>build-and-deploy-docker-image</id>
             <build>
                 <plugins>
                     <plugin>
@@ -216,8 +216,14 @@
                                     <executable>docker</executable>
                                     <workingDirectory>${resources.path}</workingDirectory>
                                     <arguments>
-                                        <argument>push</argument>
+                                        <argument>buildx</argument>
+                                        <argument>build</argument>
+                                        <argument>--platform</argument>
+                                        <argument>linux/amd64,linux/arm64</argument>
+                                        <argument>-t</argument>
                                         <argument>${docker.repo.url}/${docker.image.name}:${project.version}</argument>
+                                        <argument>--push</argument>
+                                        <argument>.</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
