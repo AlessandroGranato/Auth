@@ -10,13 +10,20 @@ The steps to run the application in docker are the following:
 ### Ensure you have a working Docker instance
 Ensure that Docker Desktop or similar are active.
 
+### Ensure you have a docker builder for multiplatforms
+If you don't have it, run the following command:
+```
+docker buildx create --name my-multiplatform-builder --driver docker-container --use
+docker buildx inspect my-multiplatform-builder --bootstrap
+```
+
 ### Ensure you have a docker network already up
 If you don't have it, run the following command:
 ```
 docker network create boogle-network
 ```
 
-### Create docker images
+### Create local docker images
 To create the docker images of the db and the application, go on the root of the project and run:
 ```
 mvn clean install -Plocal-image
@@ -31,7 +38,7 @@ If you only want to create only the application image, run the previous command 
 To run a docker db container, run the following command and populate the db variables as you need:
 
 ```
-docker run --name boogle-auth-db --network=boogle-network -e POSTGRES_DB=dbAuth -e POSTGRES_USER=dbAuth -e POSTGRES_PASSWORD=dbAuth -dp 127.0.0.1:5433:5432 pyrosandro/boogle-auth-db-image:0.0.1-SNAPSHOT
+docker run --name boogle-auth-db --network=boogle-network -e POSTGRES_DB=dbAuth -e POSTGRES_USER=dbAuth -e POSTGRES_PASSWORD=dbAuth -v C:\Users\PyroSandro\Desktop\PublicRepos\boogle\boogle-extra\auth-db-liquibase.properties:/config/liquibase.properties -dp 127.0.0.1:5433:5432 pyrosandro/boogle-auth-db-image:0.0.1-SNAPSHOT
 ```
 
 Command explanation:
@@ -41,22 +48,9 @@ Command explanation:
 4. **-e POSTGRES_DB=dbAuth:** This option sets the environment variable POSTGRES_DB inside the container to "dbAuth". This variable is used to specify the name of the PostgreSQL database to be created inside the container.
 5. **-e POSTGRES_USER=dbAuth:** This option sets the environment variable POSTGRES_USER inside the container to "dbAuth". This variable is used to specify the username for connecting to the PostgreSQL database.
 6. **-e POSTGRES_PASSWORD=dbAuth:** This option sets the environment variable POSTGRES_PASSWORD inside the container to "dbAuth". This variable is used to specify the password for connecting to the PostgreSQL database.
-7. **-dp 127.0.0.1:5433:5432:** This option specifies the port mapping for the container. It maps port 5432 on the container to port 5433 on the host machine (127.0.0.1). The -d flag tells Docker to run the container in detached mode (in the background), and the -p flag specifies the port mapping.
-8. **pyrosandro/boogle-auth-db-image:0.0.1-SNAPSHOT:** This is the name of the Docker image to use for creating the container. It specifies the image "pyrosandro/boogle-auth-db-image" with the tag "0.0.1-SNAPSHOT".
-
-### Install liquibase scripts
-
-Once the db is installed, you can run your liquibase scripts by going into liquibase folder and run the following command:
-
-```
-mvn install -Pliquibase
-```
-
-Note: if you need to rollback your scripts, run the following command (in the example, we rollback the last 2 scripts from master.xml):
-
-```
-mvn clean -Pliquibase -Dliquibase.rollbackCount=2
-```
+7. **-v C:\Users\PyroSandro\Desktop\PublicRepos\boogle\boogle-extra\auth-db-liquibase.properties:/config/liquibase.properties:** This mounts a file from the host machine (C:\Users\PyroSandro\Desktop\PublicRepos\boogle\boogle-extra\auth-db-liquibase.properties) to the container's file system (/config/liquibase.properties). This is useful for configuration files that need to be accessible to the application running in the container.
+8. **-dp 127.0.0.1:5433:5432:** This option specifies the port mapping for the container. It maps port 5432 on the container to port 5433 on the host machine (127.0.0.1). The -d flag tells Docker to run the container in detached mode (in the background), and the -p flag specifies the port mapping.
+9. **pyrosandro/boogle-auth-db-image:0.0.1-SNAPSHOT:** This is the name of the Docker image to use for creating the container. It specifies the image "pyrosandro/boogle-auth-db-image" with the tag "0.0.1-SNAPSHOT".
 
 ### Run app docker container
 
@@ -76,6 +70,8 @@ Command explanation:
 7. **pyrosandro/boogle-auth-image:0.0.1-SNAPSHOT:** This part of the command specifies the Docker image to use for creating the container. It specifies the image "pyrosandro/boogle-auth-image" with the tag "0.0.1-SNAPSHOT".
 
 Note: The external-props.yml file should contain the values of the variables needed in application.yml file. For an example, you can see the file application-localdev.yml
+
+-----------------------------------------
 
 ## Deploy artifacts and docker images
 
@@ -97,15 +93,46 @@ To deploy the artifacts, simply run the following command:
 mvn clean deploy
 ```
 
-### Deploy docker images on dockerhub
+### Deploy artifacts and docker images all at once
 To deploy application and db docker images, go on parent pom folder and launch the following command:
 ```
-mvn clean deploy -Plocal-image -Pdeploy-docker-image
+mvn clean deploy -Pbuild-and-deploy-docker-image
 ```
-This command will create the docker images from packager and packager-db submodules using the profile local-image, then they will be deployed using the profile deploy-docker-image.
 
-### Deploy artifacts and docker images all at once
-Since with mvn clean deploy we push artifacts on github packages and adding -Plocal-image and -Pdeploy-doker-image we add profiles to create and push docker images on docker repos, we can simply go in parent folder (where there is parent pom.xml file) and launch the following command to upload everything together. (Yes, it's equal to the previous command)
+-----------------------------------------
+
+## Post installation operations
+
+### Dev environment - Install liquibase scripts
+
+Once the db is installed, you can run your liquibase scripts by going into the project liquibase folder and run the following command:
+
 ```
-mvn clean deploy -Plocal-image -Pdeploy-docker-image
+mvn install -Pliquibase
+```
+
+Note: if you need to rollback your scripts, run the following command (in the example, we rollback the last 2 scripts from master.xml):
+
+```
+mvn clean -Pliquibase -Dliquibase.rollbackCount=2
+```
+
+### Prod environment - Copy and run liquibase scripts
+
+In prod environment you don't have the auth project, but you have the container. If you need to add or remove scripts, you can manually copy the master.xml file and the sql folder inside the container, then run the liquibase command to update or rollback. In order to do so, you can do the following:
+**Note:** We assume your sql folder and master.xml file have been already put in host folder: C:\Users\PyroSandro\Desktop\PublicRepos\boogle\boogle-extra\auth-db-liquibase\sql 
+
+```
+docker cp C:\Users\PyroSandro\Desktop\PublicRepos\boogle\boogle-extra\auth-db-liquibase\sql boogle-auth-db:/config
+docker cp C:\Users\PyroSandro\Desktop\PublicRepos\boogle\boogle-extra\auth-db-liquibase\master.xml boogle-auth-db:/config/master.xml
+```
+
+If you want to add scripts, run the following command:
+```
+docker exec boogle-auth-db bash -c "cd /config && liquibase --changelog-file=master.xml update"
+```
+
+If you want to rollback scripts (in the example only the last), run the following command:
+```
+docker exec boogle-auth-db bash -c "cd /config && liquibase --changelog-file=master.xml rollbackCount 1"
 ```
