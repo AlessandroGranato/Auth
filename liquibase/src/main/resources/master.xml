@@ -96,4 +96,17 @@
         </rollback>
     </changeSet>
 
+    <changeSet author="PyroSandro" id="BGL-10" logicalFilePath="AUTH" labels="1.0.0">
+        <sqlFile encoding="utf8"
+                 path="sql/BGL-10/BGL-10.sql"
+                 relativeToChangelogFile="true" splitStatements="true"
+                 stripComments="true" />
+        <rollback>
+            <sqlFile encoding="utf8"
+                     path="sql/BGL-10/rollback/RB_BGL-10.sql"
+                     relativeToChangelogFile="true" splitStatements="true"
+                     stripComments="true" />
+        </rollback>
+    </changeSet>
+
 </databaseChangeLog>
