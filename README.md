@@ -120,7 +120,7 @@ mvn clean -Pliquibase -Dliquibase.rollbackCount=2
 ### Prod environment - Copy and run liquibase scripts
 
 In prod environment you don't have the auth project, but you have the container. If you need to add or remove scripts, you can manually copy the master.xml file and the sql folder inside the container, then run the liquibase command to update or rollback. In order to do so, you can do the following:
-**Note:** We assume your sql folder and master.xml file have been already put in host folder: C:\Users\PyroSandro\Desktop\PublicRepos\boogle\boogle-extra\auth-db-liquibase\sql 
+**Note:** We assume your sql folder and master.xml file have been already copied from this project into the host folder: C:\Users\PyroSandro\Desktop\PublicRepos\boogle\boogle-extra\auth-db-liquibase\sql 
 
 ```
 docker cp C:\Users\PyroSandro\Desktop\PublicRepos\boogle\boogle-extra\auth-db-liquibase\sql boogle-auth-db:/config
